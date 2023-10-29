@@ -1,0 +1,26 @@
+{
+  "name": "robin-tutorial",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.tsx",
+  "scripts": {
+    "start": "tsx src/index.tsx",
+    "generate": "drizzle-kit generate:pg",
+    "migrate": "drizzle-kit push:pg"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@hono/node-server": "^1.2.0",
+    "dotenv": "^16.3.1",
+    "drizzle-orm": "^0.28.6",
+    "hono": "^3.9.0",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.10.7",
+    "drizzle-kit": "^0.19.13",
+    "tsx": "^3.14.0"
+  }
+}
