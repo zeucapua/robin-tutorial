@@ -18,7 +18,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import "dotenv/config";
 
 // load components from 'components.tsx'
-import { SiteLayout } from './components';
+import { ProjectCreator, SiteLayout, Toggle, Tracker } from './components';
 
 // ---------------------------------------
 
@@ -44,7 +44,9 @@ app.get("/", async (c) => {
   // return HTML response 
 	return c.html(
     <SiteLayout>
-      <h1>Hello world!</h1>
+      <ProjectCreator />
+      <div id="tracker_list" class="flex flex-wrap gap-8">
+      </div>
     </SiteLayout>
 	);
 });
@@ -129,11 +131,60 @@ app.post("/api/session/:name", async (c) => {
 
 
 // POST create a project and return a <Tracker> component
-app.post("/htmx/project/:name", async (c) => {
-   
+app.post("/htmx/project", async (c) => {
+  const data = await c.req.parseBody();
+  /*
+  // create a new project
+  await database
+    .insert(schema.projects)
+    .values({ name });
+
+  return c.html(
+    <Tracker name={name} action="start" />
+  );
+  */
+});
+
+app.post("/htmx/session/:name", async (c) => {
+  const name = c.req.param("name") as string;
+
+  // get latest session
+  const latest = await database.query.sessions.findFirst({
+    where: eq(schema.sessions.projectName, name),
+    orderBy: [desc(schema.sessions.start)]
+  });
+
+  // if no session OR latest already has an end time, then create a new session
+  // otherwise end the current session
+  if (!latest || latest.end !== null) {
+    await database
+      .insert(schema.sessions)
+      .values({ projectName: name });
+
+    return c.html(
+      <Toggle name={name} action="end" />
+    )
+  }
+  else {
+    await database
+      .update(schema.sessions)
+      .set({ end: new Date })
+      .where( eq(schema.sessions.id, latest.id) );
+
+    return c.html(
+      <Toggle name={name} action="start" />
+    )
+  }
 });
 
 export default app;
+
+// ---------------------------------------
+
+/* Reusable Functions */ 
+
+// check if latest session exist/already ended
+
 
 // ---------------------------------------
 
