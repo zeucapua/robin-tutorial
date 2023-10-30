@@ -181,7 +181,7 @@ export default app;
 
 // ---------------------------------------
 
-/* Deployment */
+/* 🚀 Deployment */
 
 // use `.env` set PORT, for Railway deployment
 const PORT = Number(process.env.PORT) || 3000;
