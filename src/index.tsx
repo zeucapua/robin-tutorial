@@ -181,13 +181,6 @@ export default app;
 
 // ---------------------------------------
 
-/* Reusable Functions */ 
-
-// check if latest session exist/already ended
-
-
-// ---------------------------------------
-
 /* Deployment */
 
 // use `.env` set PORT, for Railway deployment

@@ -9,7 +9,7 @@ export const SiteLayout = (props: { children: any }) => html`
       <script src="https://cdn.tailwindcss.com"></script>
     </head>
     <body class="flex flex-col w-full h-full min-w-screen min-h-screen p-8 gap-8">
-      <p>Test</p>
+      <p>Robin Demo by <a href="https://zeu.dev">Zeu</a></p>
       ${props.children}
     </body>
   </html>
