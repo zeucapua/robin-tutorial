@@ -17,6 +17,9 @@ import { drizzle } from "drizzle-orm/node-postgres";
 // loads environment variables from `.env`
 import "dotenv/config";
 
+// load components from 'components.tsx'
+import { SiteLayout } from './components';
+
 // ---------------------------------------
 
 /* 🏗️ Configure Hono Web Application */
@@ -32,12 +35,17 @@ const pool = new Pool({
 // initialize ORM client with schema types
 const database = drizzle(pool, { schema });
 
+// ---------------------------------------
+
 /* 🛣️ Route Endpoints */
 
 // GET index page
 app.get("/", async (c) => {
+  // return HTML response 
 	return c.html(
-		<h1>Hello world!</h1>
+    <SiteLayout>
+      <h1>Hello world!</h1>
+    </SiteLayout>
 	);
 });
 
@@ -49,7 +57,7 @@ app.get("/api/project/:name", async (c) => {
 
   // query database to find project with name
   const result = await database.query.projects.findFirst({
-    where: eq(schema.projects.name, name)
+    where: eq(schema.projects.name, name),
   });
 
   // return JSON response
@@ -68,7 +76,61 @@ app.post("/api/project/:name", async (c) => {
     .returning();
 
   // return JSON response
-  return c.json({ result });
+  return c.json({ result: result[0] });
+});
+
+
+// GET latest session under project name
+app.get("/api/session/:name", async (c) => {
+  const name = c.req.param("name") as string;
+  
+  // get latest session
+  const latest = await database.query.sessions.findFirst({
+    where: eq(schema.sessions.projectName, name),
+    orderBy: [desc(schema.sessions.start)]
+  });
+
+
+  // return null if latest is undefined
+  return c.json({ result: latest ?? null });
+});
+
+
+// POST create a new session under project name
+app.post("/api/session/:name", async (c) => {
+  const name = c.req.param("name") as string;
+
+  // get latest session
+  const latest = await database.query.sessions.findFirst({
+    where: eq(schema.sessions.projectName, name),
+    orderBy: [desc(schema.sessions.start)]
+  });
+
+  // if no session OR latest already has an end time, then create a new session
+  // otherwise end the current session
+  if (!latest || latest.end !== null) {
+    const result = await database
+      .insert(schema.sessions)
+      .values({ projectName: name })
+      .returning();
+
+    return c.json({ result: result[0] });
+  }
+  else {
+    const updated = await database
+      .update(schema.sessions)
+      .set({ end: new Date })
+      .where( eq(schema.sessions.id, latest.id) )
+      .returning();
+
+    return c.json({ result: updated[0] });
+  }
+});
+
+
+// POST create a project and return a <Tracker> component
+app.post("/htmx/project/:name", async (c) => {
+   
 });
 
 export default app;
