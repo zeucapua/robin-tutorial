@@ -41,11 +41,32 @@ const database = drizzle(pool, { schema });
 
 // GET index page
 app.get("/", async (c) => {
+  // get all projects and their latest session
+  const projects = await database.query.projects.findMany({
+    with: {
+      sessions: {
+        limit: 1,
+        orderBy: desc(schema.sessions.start)
+      }
+    }
+  });
+
+
   // return HTML response 
 	return c.html(
     <SiteLayout>
+      <h1 class="text-3xl font-bold">Robin Demo by <a href="https://zeu.dev">Zeu</a></h1>
       <ProjectCreator />
       <div id="tracker_list" class="flex flex-wrap gap-8">
+        { 
+          projects.map((p) => {
+            console.log(p.name, p.sessions);
+            if (p.sessions.length === 0 || p.sessions[0].end) {
+              return <Tracker name={p.name ?? ""} action="start" />
+            }
+            else { return <Tracker name={p.name ?? ""} action="end" /> }
+          })
+        }
       </div>
     </SiteLayout>
 	);
@@ -133,16 +154,18 @@ app.post("/api/session/:name", async (c) => {
 // POST create a project and return a <Tracker> component
 app.post("/htmx/project", async (c) => {
   const data = await c.req.parseBody();
-  /*
-  // create a new project
-  await database
-    .insert(schema.projects)
-    .values({ name });
+  const project_name = data.new_project as string;
 
-  return c.html(
-    <Tracker name={name} action="start" />
-  );
-  */
+  if (project_name.length > 0) {
+    // create a new project
+    await database
+      .insert(schema.projects)
+      .values({ name: project_name });
+
+    return c.html(
+      <Tracker name={project_name} action="start" />
+    );
+  }
 });
 
 app.post("/htmx/session/:name", async (c) => {
@@ -162,7 +185,7 @@ app.post("/htmx/session/:name", async (c) => {
       .values({ projectName: name });
 
     return c.html(
-      <Toggle name={name} action="end" />
+      <Tracker name={name} action="end" />
     )
   }
   else {
@@ -172,7 +195,7 @@ app.post("/htmx/session/:name", async (c) => {
       .where( eq(schema.sessions.id, latest.id) );
 
     return c.html(
-      <Toggle name={name} action="start" />
+      <Tracker name={name} action="start" />
     )
   }
 });
