@@ -25,11 +25,11 @@ export const ProjectCreator = () => {
         class="px-4 py-2 border rounded-xl text-black"
       />
       <button
-        hx-post={`/htmx/project`}
         hx-trigger="click"
-        hx-target="#tracker_list"
-        hx-swap="afterbegin"
+        hx-post="/htmx/project"
         hx-include="[name='new_project']"
+        hx-target="#tracker_list"
+        hx-swap="beforeend"
         class="px-4 py-2 border rounded-xl"
       >
         Add
@@ -44,10 +44,10 @@ export const Tracker = (props: { name: string, action: "start" | "end" }) => {
       <p>{props.name}</p>
       <button
         type="button"
-        hx-post={`/htmx/session/${props.name}`}
         hx-trigger="click"
-        hx-swap="outerHTML"
+        hx-post={`/htmx/session/${props.name}`}
         hx-target={`#tracker_${props.name}`}
+        hx-swap="outerHTML"
       >
         {props.action}
       </button>

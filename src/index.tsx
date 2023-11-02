@@ -168,6 +168,8 @@ app.post("/htmx/project", async (c) => {
   }
 });
 
+
+// POST toggle a session by project's name and return a Tracker component
 app.post("/htmx/session/:name", async (c) => {
   const name = c.req.param("name") as string;
 
