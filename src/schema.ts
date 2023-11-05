@@ -19,7 +19,7 @@ export const sessions = pgTable("sessions", {
 	id: serial("id").primaryKey(),
 	start: timestamp("start").defaultNow(),
 	end: timestamp("end"),
-	projectName: varchar("project_name").notNull()
+	projectName: varchar("project_name").notNull().references(() => projects.name, { onDelete: "cascade" })
 });
 
 

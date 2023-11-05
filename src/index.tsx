@@ -18,7 +18,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import "dotenv/config";
 
 // load components from 'components.tsx'
-import { ProjectCreator, SiteLayout, Toggle, Tracker } from './components';
+import { ProjectCreator, Refresher, SessionRow, SiteLayout, Tracker } from './components';
 
 // ---------------------------------------
 
@@ -51,6 +51,11 @@ app.get("/", async (c) => {
     }
   });
 
+  // get all sessions for table and project aggregate
+  const sessions = await database.query.sessions.findMany({
+    orderBy: desc(schema.sessions.start)
+  });
+
 
   // return HTML response 
 	return c.html(
@@ -60,7 +65,6 @@ app.get("/", async (c) => {
       <div id="tracker_list" class="flex flex-wrap gap-8">
         { 
           projects.map((p) => {
-            console.log(p.name, p.sessions);
             if (p.sessions.length === 0 || p.sessions[0].end) {
               return <Tracker name={p.name ?? ""} action="start" />
             }
@@ -68,6 +72,42 @@ app.get("/", async (c) => {
           })
         }
       </div>
+
+      <button 
+        type="button"
+        hx-trigger="click"
+        hx-patch="/htmx/refreshSessions"
+        hx-target="#session_rows"
+        hx-swap="outerHTML"
+        class="px-4 py-2 border rounded-xl bg-sky-500"
+      >
+        Refresh
+      </button>
+      <table class="table-auto text-start">
+        <thead>
+          <tr>
+            <th>Duration</th>
+            <th>Project</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
+
+        <tbody id="session_rows">
+          {
+            sessions.map((s) => {
+              if (s && (s.start && s.end)) {
+                const min_duration = ((s.end?.valueOf() - s.start?.valueOf()) / (60 * 1000));
+                const duration_string = (min_duration < 1) ? 
+                  `${(min_duration * 60).toFixed(2)} seconds` 
+                  : `${(min_duration).toFixed(2)} minutes`;
+                return <SessionRow session={s} duration={duration_string} />
+              }
+            })
+          }
+        </tbody>
+      </table>
     </SiteLayout>
 	);
 });
@@ -152,7 +192,7 @@ app.post("/api/session/:name", async (c) => {
 
 
 // POST create a project and return a <Tracker> component
-app.post("/htmx/project", async (c) => {
+app.post("/htmx/createProject", async (c) => {
   const data = await c.req.parseBody();
   const project_name = data.new_project as string;
 
@@ -169,8 +209,8 @@ app.post("/htmx/project", async (c) => {
 });
 
 
-// POST toggle a session by project's name and return a Tracker component
-app.post("/htmx/session/:name", async (c) => {
+// PATCH toggle a session by project's name and return a Tracker component
+app.patch("/htmx/toggleSession/:name", async (c) => {
   const name = c.req.param("name") as string;
 
   // get latest session
@@ -201,6 +241,54 @@ app.post("/htmx/session/:name", async (c) => {
     )
   }
 });
+
+app.delete("/htmx/deleteProject/:name", async (c) => {
+  const name = c.req.param("name") as string;
+  
+  await database
+    .delete(schema.projects)
+    .where( eq(schema.projects.name, name) );
+
+  // for htmx to swap, then delete??
+  return c.html(<div />);
+});
+
+
+app.patch("/htmx/refreshSessions", async (c) => {
+  // get all sessions for table and project aggregate
+  const sessions = await database.query.sessions.findMany({
+    orderBy: desc(schema.sessions.start)
+  });
+
+  return c.html(
+    <tbody id="session_rows">
+      {
+        sessions.map((s) => {
+          if (s && (s.start && s.end)) {
+            const min_duration = ((s.end?.valueOf() - s.start?.valueOf()) / (60 * 1000));
+            const duration_string = (min_duration < 1) ? 
+              `${(min_duration * 60).toFixed(2)} seconds` 
+              : `${(min_duration).toFixed(2)} minutes`;
+            return <SessionRow session={s} duration={duration_string} />
+          }
+        })
+      }
+    </tbody>
+  );
+});
+
+
+app.delete("/htmx/deleteSession/:id", async (c) => {
+  const id = c.req.param("id") as string;
+
+  await database
+    .delete(schema.sessions)
+    .where( eq(schema.sessions.id, Number.parseInt(id)) );
+
+  // for htmx to swap, then delete??
+  return c.html(<div />);
+});
+
 
 export default app;
 

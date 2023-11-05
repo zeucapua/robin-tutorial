@@ -8,6 +8,13 @@
       "when": 1698525057348,
       "tag": "0000_wet_richard_fisk",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1698953970493,
+      "tag": "0001_opposite_vindicator",
+      "breakpoints": true
     }
   ]
 }
